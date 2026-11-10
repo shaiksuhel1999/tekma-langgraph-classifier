@@ -15,21 +15,12 @@ from langchain_core.stores import InMemoryStore
 
 load_dotenv(verbose=True, override=True)
 
-
-# --------------------------------------------------
-# 1. LLM Configuration
-# --------------------------------------------------
-
 model = ChatOpenAI(
     model="gpt-4o-mini",
     max_tokens=1000,
     temperature=0.3
 )
 
-
-# --------------------------------------------------
-# 2. Graph Configuration
-# --------------------------------------------------
 
 checkpointer = InMemorySaver()
 store = InMemoryStore()
@@ -40,10 +31,6 @@ config = {
     }
 }
 
-
-# --------------------------------------------------
-# 3. State Definition
-# --------------------------------------------------
 
 class ClassificationState(BaseModel):
     query: str = Field(
@@ -61,10 +48,6 @@ class ClassificationState(BaseModel):
     )
 
 
-# --------------------------------------------------
-# 4. Structured Output Schemas
-# --------------------------------------------------
-
 class ClassificationOutput(BaseModel):
     category: Literal[
         "biology",
@@ -81,11 +64,6 @@ class SpecialistOutput(BaseModel):
     resolution: str = Field(
         description="Detailed answer to the user's question"
     )
-
-
-# --------------------------------------------------
-# 5. Agent Creation
-# --------------------------------------------------
 
 classification_agent = create_agent(
     model=model,
@@ -133,10 +111,6 @@ specialist_agents = {
 }
 
 
-# --------------------------------------------------
-# 6. Classification Node
-# --------------------------------------------------
-
 async def classification_node(state: ClassificationState):
 
     print("Inside classification node")
@@ -160,10 +134,6 @@ async def classification_node(state: ClassificationState):
         "category": structured_result.category
     }
 
-
-# --------------------------------------------------
-# 7. Reusable Specialist Node
-# --------------------------------------------------
 
 def create_specialist_node(category: str):
 
@@ -193,10 +163,6 @@ def create_specialist_node(category: str):
     return specialist_node
 
 
-# --------------------------------------------------
-# 8. Conditional Routing
-# --------------------------------------------------
-
 def conditional_route(state: ClassificationState):
 
     print("Inside conditional routing")
@@ -207,11 +173,6 @@ def conditional_route(state: ClassificationState):
         )
 
     return state.category
-
-
-# --------------------------------------------------
-# 9. Graph Construction
-# --------------------------------------------------
 
 builder = StateGraph(ClassificationState)
 
@@ -238,24 +199,16 @@ builder.add_conditional_edges(
     }
 )
 
-# Every specialist completes the workflow.
 for category in specialist_agents:
     builder.add_edge(category, END)
 
 
-# --------------------------------------------------
-# 10. Compile Graph
-# --------------------------------------------------
 
 graph = builder.compile(
     checkpointer=checkpointer,
     store=store
 )
 
-
-# --------------------------------------------------
-# 11. Execute Graph
-# --------------------------------------------------
 
 async def main():
 
